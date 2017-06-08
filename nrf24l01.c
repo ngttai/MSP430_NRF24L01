@@ -208,15 +208,15 @@ void SPI_bitbang_out(uint8_t value)
     for(x=8; x > 0; x--)
     {
         if(value & 0x80)                                     // If bit is high...
-            SPI_BITBANG_P2OUT |= SPI_BITBANG_SIMO; // Set SIMO high...
+            SPI_SIMO_OUT |= SPI_BIT_SIMO; // Set SIMO high...
         else
-            SPI_BITBANG_P2OUT &= ~SPI_BITBANG_SIMO;// Set SIMO low...
+            SPI_SIMO_OUT &= ~SPI_BIT_SIMO;// Set SIMO low...
         value = value << 1;                                  // Rotate bits
 
-        SPI_BITBANG_P1OUT &= ~SPI_BITBANG_UCLK;  // Set clock low
-        SPI_BITBANG_P1OUT |= SPI_BITBANG_UCLK;   // Set clock high
+        SPI_CLK_OUT &= ~SPI_BIT_CLK;  // Set clock low
+        SPI_CLK_OUT |= SPI_BIT_CLK;   // Set clock high
     }
-    SPI_BITBANG_P1OUT &= ~SPI_BITBANG_UCLK;  // Set clock low
+    SPI_CLK_OUT &= ~SPI_BIT_CLK;  // Set clock low
 }
 
 // Input eight-bit value using selected bit-bang pins
@@ -226,7 +226,7 @@ uint8_t SPI_bitbang_in()
     uint8_t y;
 
   // Determine how many bit positions SOMI is from least-significant bit
-    x = SPI_BITBANG_SOMI;
+    x = SPI_BIT_SOMI;
     while(x > 1)
     {
         shift++;
@@ -236,13 +236,13 @@ uint8_t SPI_bitbang_in()
     x = 0;
     for(y=8;y>0;y--)
     {
-        SPI_BITBANG_P1OUT &= ~SPI_BITBANG_UCLK;// Set clock low
-        SPI_BITBANG_P1OUT |= SPI_BITBANG_UCLK;// Set clock high
+        SPI_CLK_OUT &= ~SPI_BIT_CLK;// Set clock low
+        SPI_CLK_OUT |= SPI_BIT_CLK;// Set clock high
 
         x = x << 1;                             // Make room for next bit
-        x = x | ((SPI_BITBANG_P2IN & SPI_BITBANG_SOMI) >> shift);
+        x = x | ((SPI_SOMI_IN & SPI_BIT_SOMI) >> shift);
     }                                         // Store next bit
-    SPI_BITBANG_P1OUT &= ~SPI_BITBANG_UCLK; // Set clock low
+    SPI_CLK_OUT &= ~SPI_BIT_CLK; // Set clock low
     return(x);
 }
 
@@ -258,10 +258,10 @@ void NRF24L01_InitPins(void) {
     /* CE low = disable TX/RX */
     NRF24L01_CE_LOW;
     // Config bitbang pins
-    SPI_BITBANG_P2OUT |= SPI_BITBANG_SIMO;
-    SPI_BITBANG_P1OUT &= ~SPI_BITBANG_UCLK;
-    SPI_BITBANG_P2DIR |= SPI_BITBANG_SIMO;
-    SPI_BITBANG_P1DIR |= SPI_BITBANG_UCLK;
+    SPI_SIMO_OUT |= SPI_BIT_SIMO;
+    SPI_CLK_OUT &= ~SPI_BIT_CLK;
+    SPI_SIMO_DIR |= SPI_BIT_SIMO;
+    SPI_CLK_DIR |= SPI_BIT_CLK;
 }
 
 uint8_t NRF24L01_Init(uint8_t channel, uint8_t payload_size) {
@@ -375,7 +375,6 @@ uint8_t NRF24L01_ReadRegister(uint8_t reg)
 void NRF24L01_ReadRegisterMulti(uint8_t reg, uint8_t* data, uint8_t count)
 {
     uint8_t i;
-
     NRF24L01_CSN_LOW;
     SPI_bitbang_out(NRF24L01_READ_REGISTER_MASK(reg));
     for (i = 0; i < count; i++)
@@ -385,7 +384,7 @@ void NRF24L01_ReadRegisterMulti(uint8_t reg, uint8_t* data, uint8_t count)
 
 void NRF24L01_WriteRegister(uint8_t reg, uint8_t value) {
     NRF24L01_CSN_LOW;
-    while (SPI_BITBANG_P2IN & SPI_BITBANG_SOMI); // Wait MOSI ready
+    while (SPI_SOMI_IN & SPI_BIT_SOMI); // Wait MOSI ready
     SPI_bitbang_out(NRF24L01_WRITE_REGISTER_MASK(reg));
     SPI_bitbang_out(value);
     NRF24L01_CSN_HIGH;
@@ -395,7 +394,7 @@ void NRF24L01_WriteRegisterMulti(uint8_t reg, uint8_t *data, uint8_t count)
 {
     uint8_t i;
     NRF24L01_CSN_LOW;
-    while (SPI_BITBANG_P2IN & SPI_BITBANG_SOMI); // Wait MOSI ready
+    while (SPI_SOMI_IN & SPI_BIT_SOMI); // Wait MOSI ready
     SPI_bitbang_out(NRF24L01_WRITE_REGISTER_MASK(reg));
 
     for (i = 0; i < count; i++)
@@ -444,7 +443,7 @@ void NRF24L01_Transmit(uint8_t *data)
     /* Send payload to nRF24L01+ */
     NRF24L01_CSN_LOW;
     /* Send write payload command */
-    while (SPI_BITBANG_P2IN & SPI_BITBANG_SOMI); // Wait MOSI ready
+    while (SPI_SOMI_IN & SPI_BIT_SOMI); // Wait MOSI ready
     SPI_bitbang_out(NRF24L01_W_TX_PAYLOAD_MASK);
 
     /* Fill payload with data*/
@@ -466,13 +465,9 @@ void NRF24L01_GetData(uint8_t* data)
     /* Send read payload command*/
     SPI_bitbang_out(NRF24L01_R_RX_PAYLOAD_MASK);
     /* Read payload */
-//    while (SPI_BITBANG_P2IN & SPI_BITBANG_SOMI); // Wait MOSI ready
     for (i = 0; i < NRF24L01_Struct.PayloadSize; i++)
     {
-        SPI_bitbang_out(data[i]);     // Send data
-
         data[i] = SPI_bitbang_in();     // reciver data
-
     }
 
 //    SPI_SendMulti(NRF24L01_SPI, data, data, NRF24L01_Struct.PayloadSize);

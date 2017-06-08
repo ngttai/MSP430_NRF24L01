@@ -8,22 +8,12 @@
 #ifndef NRF24L01_H_
 #define NRF24L01_H_
 
-
 /* C++ detection */
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @addtogroup STM32F4xx_Libraries
- * @{
- */
-
-/**
- * @defgroup NRF24L01P
- * @brief    nRF24L01+ library for STM32F4xx devices - http://stm32f4-discovery.com/2014/06/library-17-nrf24l01-stm32f4xx/
- * @{
- *
  * This library allows you to work with nRF24L01+ modules.
  *
  * You can send and receive data from nRF24L01+ modules.
@@ -31,7 +21,7 @@ extern "C" {
  * \par Default pinout
  *
 @verbatim
-NRF24L01+   STM32F4xx   DESCRIPTION
+NRF24L01+   MSP430   DESCRIPTION
 
 GND         GND         Ground
 VCC         3.3V        3.3V
@@ -41,60 +31,12 @@ SCK         PC10        SCK pin for SPI
 MOSI        PC12        MOSI pin for SPI
 MISO        PC11        MISO pin for SPI
 IRQ         Not used    Interrupt pin. Goes low when active. Pin functionality is active, but not used in library
-@endverbatim
  *
  * IRQ pin is not used in this library, but it's functionality is enabled by this software.
- *
  * You can still set any pin on F4xx to be an external interrupt and handle interrupts from nRF24L01+ module.
- *
  * The easiest way to that is to use TM EXTI library and attach interrupt functionality to this pin
- *
- * \par Custom pinout
- *
- * Add lines below in your defines.h file if you want to change default pinout:
- *
-@verbatim
-//Change SPI used. Refer to TM SPI library to check which pins are for SPI
-#define NRF24L01_SPI                SPI3
-#define NRF24L01_SPI_PINS           SPI_PinsPack_2
+*/
 
-//Change CSN pin. This is for SPI communication
-#define NRF24L01_CSN_PORT           GPIOD
-#define NRF24L01_CSN_PIN            GPIO_Pin_7
-
-//Change CE pin. This pin is used to enable/disable transmitter/receiver functionality
-#define NRF24L01_CE_PORT            GPIOD
-#define NRF24L01_CE_PIN             GPIO_Pin_8
-@endverbatim
- *
- * \par Changelog
- *
-@verbatim
- Versio 1.1.1
-  - June 21, 2015
-  - Fixed buf with pin configuration
-
- Version 1.1
-  - March 11, 2015
-  - Added support for my new GPIO system
-
- Version 1.0.1
-  - December 14, 2014
-  - Activated all 3 interrupts in NRF24L01+
-
- Version 1.0
-  - First release
-@endverbatim
- *
- * \par Dependencies
- *
-@verbatim
- - STM32F4xx
- - defines.h
- - TM SPI
- - TM GPIO
-@endverbatim
- */
 #include "msp430.h"
 #include "stdint.h"
 /**
@@ -118,18 +60,21 @@ IRQ         Not used    Interrupt pin. Goes low when active. Pin functionality i
 
 //Define I/O for SPI Software
 #ifdef USE_INTF_BITBANG
-
-#define SPI_BITBANG_P2DIR P2DIR
-#define SPI_BITBANG_P2OUT P2OUT
-#define SPI_BITBANG_P2IN  P2IN
-
-#define SPI_BITBANG_P1DIR P2DIR
-#define SPI_BITBANG_P1OUT P2OUT
-#define SPI_BITBANG_P1IN  P2IN
-
-#define SPI_BITBANG_SIMO  BIT4
-#define SPI_BITBANG_SOMI  BIT2
-#define SPI_BITBANG_UCLK  BIT1
+/* Define for SIMO */
+#define SPI_SIMO_DIR P2DIR
+#define SPI_SIMO_OUT P2OUT
+#define SPI_SIMO_IN  P2IN
+#define SPI_BIT_SIMO  BIT4
+/* Define for SOMI */
+#define SPI_SOMI_DIR P2DIR
+#define SPI_SOMI_OUT P2OUT
+#define SPI_SOMI_IN  P2IN
+#define SPI_BIT_SOMI  BIT2
+/* Define for CLK */
+#define SPI_CLK_DIR P2DIR
+#define SPI_CLK_OUT P2OUT
+#define SPI_CLK_IN  P2IN
+#define SPI_BIT_CLK  BIT1
 
 #endif /* USE_INTF_BITBANG */
 
@@ -147,10 +92,6 @@ IRQ         Not used    Interrupt pin. Goes low when active. Pin functionality i
 #define NRF24L01_CSN_INIT           st(P2DIR |=  BV(NRF24L01_CSN_BIT);)
 #define NRF24L01_CSN_LOW            st(P2OUT &=  ~BV(NRF24L01_CSN_BIT);)
 #define NRF24L01_CSN_HIGH           st(P2OUT |=  BV(NRF24L01_CSN_BIT);)
-
-/**
- * @}
- */
 
 /**
  * @defgroup NRF24L01P_Typedefs
@@ -218,7 +159,6 @@ typedef enum {
  * @retval 1
  */
 uint8_t NRF24L01_Init(uint8_t channel, uint8_t payload_size);
-uint8_t NRF24L01_ReadRegister(uint8_t reg);
 
 /**
  * @brief  Sets own address. This is used for settings own id when communication with other modules
