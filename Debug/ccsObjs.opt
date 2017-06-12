@@ -1,0 +1,1 @@
+"./hal_nrf_hw.obj" "./hal_nrf_l01.obj" "./main.obj" "./radio_sb.obj" "../lnk_msp430g2553.cmd" -llibc.a 
